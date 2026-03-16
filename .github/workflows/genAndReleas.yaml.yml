@@ -52,13 +52,20 @@ jobs:
           previous_tag="${{ steps.get-previous-tag.outputs.previous_tag }}"
 
           # Get current YYYY.MM
-          next_year_month="$(date +'%Y').$(date +'%-m')"
+          today="$(date +'%Y').$(date +'%-m').$(date +'%-d')"
 
           # Extract year, month and patch from previous tag
-          previous_year="${previous_tag%%\.*}"
-          previous_month="${previous_tag#*.}"
-          previous_month="${previous_month%.*}"
-          previous_patch="${previous_tag##*.}"
+          if [[ "$previous_tag" =~ ^([0-9]{4})\.([0-9]{1,2})\.([0-9]{1,2})(?:\.([0-9]+))?$ ]]; then
+            py="${BASH_REMATCH[1]}"
+            pm="${BASH_REMATCH[2]}"
+            pd="${BASH_REMATCH[3]}"
+            pp="${BASH_REMATCH[4]:-0}"
+            # normalize Day to two digits for consistent comparison
+            pm=$(printf "%02d" "$pm")
+            pd=$(printf "%02d" "$pd")
+            previous_date="${py}.${pm}.${pd}"
+            previous_patch="$pp"
+          fi
 
           echo "### Version Components" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -66,8 +73,9 @@ jobs:
           echo "|-----------|----------------|-----------|" >> $GITHUB_STEP_SUMMARY
           echo "| Year      | ${previous_year} | $(date +'%Y') |" >> $GITHUB_STEP_SUMMARY
           echo "| Month     | ${previous_month} | $(date +'%-m') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Day       | ${previous_day} | $(date +'%-d') |" >> $GITHUB_STEP_SUMMARY
 
-          if [[ "${previous_year}.${previous_month}" == "${next_year_month}" ]]; then
+          if [[ "${previous_year}.${previous_month}" == "${today}" ]]; then
               next_patch="$((previous_patch + 1))"
               echo "| Patch     | ${previous_patch} | ${next_patch} ⬆️ |" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
@@ -79,7 +87,7 @@ jobs:
               echo "ℹ️ First release for this month → **resetting patch number to 0**" >> $GITHUB_STEP_SUMMARY
           fi
 
-          release_tag="${next_year_month}.${next_patch}"
+          release_tag="${today}.${next_patch}"
           echo "release_tag=$release_tag" >> $GITHUB_OUTPUT
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "🚀 **New release tag:** \`${release_tag}\`" >> $GITHUB_STEP_SUMMARY
