@@ -91,20 +91,43 @@ jobs:
 
       - name: Create Release
         env:
-          RELEASE_TAG: "${{ steps.calculate-version.outputs.release_tag }}"
+          RELEASE_TAG: ${{ steps.calculate-version.outputs.release_tag }}
         run: |
+          set -euo pipefail
+
+          # capture current branch BEFORE we create a new branch
+          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          echo "Current branch: $CURRENT_BRANCH"
+
+          # author config (optional if already configured earlier)
           git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
-          git config --global user.name "${GITHUB_ACTOR} (GitHub Actions)"
-          git checkout -b release/${release_tag} && \
-          git add gen/ && \
-          git commit -m "Release ${release_tag}: Include generated client libraries" && \
-          git tag -a ${release_tag} -m "Release ${release_tag}" && \
-          git checkout $$CURRENT_BRANCH && \
-          git branch -D release/${release_tag} && \
-          	if ! git push origin ${release_tag}; then \
-          		echo "Error: Failed to push tag ${release_tag} to remote repository."; \
-          		echo "Cleaning up local tag..."; \
-          		git tag -d ${release_tag}; \
-          		exit 1; \
-          	fi
-          	echo "Release ${release_tag} created and pushed successfully!"
+          git config --global user.name  "${GITHUB_ACTOR} (GitHub Actions)"
+
+          # create release branch
+          git checkout -b "release/$RELEASE_TAG"
+
+          # add generated code
+          git add gen/
+
+          # only commit if there are staged changes
+            git commit -m "Release $RELEASE_TAG: Include generated client libraries"
+
+            # create annotated tag
+            git tag -a "$RELEASE_TAG" -m "Release $RELEASE_TAG"
+
+            # push tag (explicitly) — remove local tag on failure
+            if ! git push origin "refs/tags/$RELEASE_TAG"; then
+              echo "Error: Failed to push tag $RELEASE_TAG to remote repository."
+              echo "Cleaning up local tag..."
+              git tag -d "$RELEASE_TAG"
+              # return to original branch and delete release branch before failing
+              git checkout "$CURRENT_BRANCH"
+              git branch -D "release/$RELEASE_TAG" || true
+              exit 1
+            fi
+
+            echo "Release $RELEASE_TAG created and pushed successfully!"
+
+          # always return to the original branch and delete the temporary release branch locally
+          git checkout "$CURRENT_BRANCH"
+          git branch -D "release/$RELEASE_TAG" || true
