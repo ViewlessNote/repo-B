@@ -51,8 +51,8 @@ jobs:
           # Get previous tag value from previous step
           previous_tag="${{ steps.get-previous-tag.outputs.previous_tag }}"
 
-          # Get current YYYY.MM
-          today="$(date +'%Y').$(date +'%-m').$(date +'%-d')"
+          # Get current YYYY.MM.DD
+          today="$(date +'%Y').$(date +'%-M').$(date +'%-D')"
 
           # Extract year, month and patch from previous tag
           if [[ "$previous_tag" =~ ^([0-9]{4})\.([0-9]{1,2})\.([0-9]{1,2})(?:\.([0-9]+))?$ ]]; then
@@ -84,7 +84,7 @@ jobs:
               next_patch="0"
               echo "| Patch     | ${previous_patch} | ${next_patch} 🔄 |" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
-              echo "ℹ️ First release for this month → **resetting patch number to 0**" >> $GITHUB_STEP_SUMMARY
+              echo "ℹ️ First release for this day → **resetting patch number to 0**" >> $GITHUB_STEP_SUMMARY
           fi
 
           release_tag="${today}.${next_patch}"
