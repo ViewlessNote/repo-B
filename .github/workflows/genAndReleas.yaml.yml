@@ -96,7 +96,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "release/${{ steps.calculate-version.outputs.release_tag }}"
           git commit -m "chore: ${{ steps.calculate-version.outputs.release_tag }}"
-          git tag -a ${{ steps.calculate-version.outputs.release_tag }}
+          git tag -a ${{ steps.calculate-version.outputs.release_tag }} -m "Release ${{ steps.calculate-version.outputs.release_tag }}"
           git push origin
           
 
