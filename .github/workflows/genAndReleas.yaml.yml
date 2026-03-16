@@ -55,7 +55,7 @@ jobs:
           today="$(date +'%Y').$(date +'%-m').$(date +'%-d')"
 
           # Extract year, month and patch from previous tag
-          if [[ "$previous_tag" =~ ^([0-9]{4})\.([0-9]{1,2})\.([0-9]{1,2})(?:\.([0-9]+))?$]]; then
+          if [[ "$previous_tag" =~ ^([0-9]{4})\.([0-9]{1,2})\.([0-9]{1,2})(?:\.([0-9]+))?$] ]; then
             py="${BASH_REMATCH[1]}"
             pm="${BASH_REMATCH[2]}"
             pd="${BASH_REMATCH[3]}"
