@@ -37,7 +37,7 @@ jobs:
           previous_tag="$(gh release list --limit 1 | awk '{ print $1 }')"
           if [ -z "$previous_tag" ]; then
             echo "ℹ️ **No previous releases found.** This will be the first release." >> $GITHUB_STEP_SUMMARY
-            previous_tag="0.0.0"
+            previous_tag="0.0.0.0"
           else
             echo "🏷️ **Previous release tag:** \`${previous_tag}\`" >> $GITHUB_STEP_SUMMARY
           fi
@@ -55,7 +55,7 @@ jobs:
           today="$(date +'%Y').$(date +'%-m').$(date +'%-d')"
 
           # Extract year, month and patch from previous tag
-          if [[ "$previous_tag" =~ ^([0-9]{4})\.([0-9]{1,2})\.([0-9]{1,2})(?:\.([0-9]+))?$ ]]; then
+          if [[ "$previous_tag" =~ ^([0-9]{4})\.([0-9]{1,2})\.([0-9]{1,2})(?:\.([0-9]+))?$]]; then
             py="${BASH_REMATCH[1]}"
             pm="${BASH_REMATCH[2]}"
             pd="${BASH_REMATCH[3]}"
@@ -75,7 +75,7 @@ jobs:
           echo "| Month     | ${previous_month} | $(date +'%-m') |" >> $GITHUB_STEP_SUMMARY
           echo "| Day       | ${previous_day} | $(date +'%-d') |" >> $GITHUB_STEP_SUMMARY
 
-          if [[ "${previous_year}.${previous_month}" == "${today}" ]]; then
+          if [[ "${previous_date}" == "${today}" ]]; then
               next_patch="$((previous_patch + 1))"
               echo "| Patch     | ${previous_patch} | ${next_patch} ⬆️ |" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
