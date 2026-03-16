@@ -30,8 +30,11 @@ jobs:
 
       - name: Buf Generate (if SDK changes)
         run: |
-          ls -la
           buf generate
+
+      - name: Include generated client libraries
+        run: |
+          git add gen/
 
       - name: Create Release
         uses: mirceanton/action-calver-release@2025.4.1
