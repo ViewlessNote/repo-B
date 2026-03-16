@@ -36,7 +36,7 @@ jobs:
         id: get-previous-tag
         shell: bash
         env:
-          GH_TOKEN: "${{ GITHUB_TOKEN }}"
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         run: |
           previous_tag="$(gh release list --limit 1 | awk '{ print $1 }')"
           if [ -z "$previous_tag" ]; then
@@ -103,7 +103,7 @@ jobs:
         id: create-release
         shell: bash
         env:
-          GH_TOKEN: "${{ GITHUB_TOKEN }}"
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           DRY_RUN: "${{ inputs.dry-run }}"
           RELEASE_TAG: "${{ steps.calculate-version.outputs.release_tag }}"
         run: |
