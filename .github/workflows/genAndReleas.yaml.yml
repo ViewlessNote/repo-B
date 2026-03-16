@@ -1,0 +1,36 @@
+name: genAndReleas.yaml
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build-and-sync:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Install Protobuf
+        uses: bufbuild/buf-setup-action@v1.50.0
+
+      - name: Install go buf Modules (if SDK changes)
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.29.0
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2.0
+
+      - name: Buf Generate (if SDK changes)
+        run: |
+          buf generate
+
+      - name: Create Release
+        uses: mirceanton/action-calver-release@2025.4.1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
