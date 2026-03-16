@@ -93,6 +93,8 @@ jobs:
         env:
           RELEASE_TAG: "${{ steps.calculate-version.outputs.release_tag }}"
         run: |
+          git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+          git config --global user.name "${GITHUB_ACTOR} (GitHub Actions)"
           git checkout -b release/$RELEASE_TAG && \
           git add gen/ && \
           git commit -m "Release $RELEASE_TAG: Include generated client libraries" && \
