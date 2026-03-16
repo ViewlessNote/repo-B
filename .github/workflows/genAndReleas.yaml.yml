@@ -89,7 +89,7 @@ jobs:
           echo "🚀 **New release tag:** \`${release_tag}\`" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-      - name: Include generated client libraries
+      - name: Create Release
         env:
           RELEASE_TAG: "${{ steps.calculate-version.outputs.release_tag }}"
         run: |
@@ -97,49 +97,12 @@ jobs:
           git add gen/ && \
           git commit -m "Release $RELEASE_TAG: Include generated client libraries" && \
           git tag -a $RELEASE_TAG -m "Release $RELEASE_TAG" && \
-          git checkout $RELEASE_TAG &&
-
-      - name: Create Release
-        id: create-release
-        shell: bash
-        env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          DRY_RUN: "${{ inputs.dry-run }}"
-          RELEASE_TAG: "${{ steps.calculate-version.outputs.release_tag }}"
-        run: |
-          echo "## 🔄 Release Process" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-
-          release_cmd="gh release create \"$RELEASE_TAG\" --repo=\"${GITHUB_REPOSITORY}\" --title=\"$RELEASE_TAG\" --generate-notes"
-
-          if [[ "${DRY_RUN}" == "true" ]]; then
-              echo "⚠️ **Running in dry-run mode!** This will **not** actually create a new release!" >> $GITHUB_STEP_SUMMARY
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "The command that *would have* run is: " >> $GITHUB_STEP_SUMMARY
-              echo "```bash" >> $GITHUB_STEP_SUMMARY
-              echo "$release_cmd" >> $GITHUB_STEP_SUMMARY
-              echo "```" >> $GITHUB_STEP_SUMMARY
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "✅ **Dry run completed successfully**" >> $GITHUB_STEP_SUMMARY
-
-              echo "release_url=''" >> $GITHUB_OUTPUT
-          else
-              echo "⏳ Creating release..." >> $GITHUB_STEP_SUMMARY
-              echo "" >> $GITHUB_STEP_SUMMARY
-
-              if release_output=$(eval "$release_cmd" 2>&1); then
-                release_url="https://github.com/$GITHUB_REPOSITORY/releases/tag/$RELEASE_TAG"
-                echo "✅ **Release created successfully!**" >> $GITHUB_STEP_SUMMARY
-                echo "" >> $GITHUB_STEP_SUMMARY
-                echo "📎 **Release URL:** [${release_url}](${release_url})" >> $GITHUB_STEP_SUMMARY
-
-                echo "release_url=$release_url" >> $GITHUB_OUTPUT
-              else
-                echo "❌ **Release creation failed with error:**" >> $GITHUB_STEP_SUMMARY
-                echo "" >> $GITHUB_STEP_SUMMARY
-                echo "```" >> $GITHUB_STEP_SUMMARY
-                echo "$release_output" >> $GITHUB_STEP_SUMMARY
-                echo "```" >> $GITHUB_STEP_SUMMARY
-                exit 1
-              fi
-          fi
+          git checkout $$CURRENT_BRANCH && \
+          	git branch -D release/$(VERSION) && \
+          	if ! git push origin $(VERSION); then \
+          		echo "Error: Failed to push tag $(VERSION) to remote repository."; \
+          		echo "Cleaning up local tag..."; \
+          		git tag -d $(VERSION); \
+          		exit 1; \
+          	fi
+          	echo "Release $(VERSION) created and pushed successfully!"
