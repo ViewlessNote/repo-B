@@ -95,16 +95,16 @@ jobs:
         run: |
           git config --global user.email "${GITHUB_ACTOR}@users.noreply.github.com"
           git config --global user.name "${GITHUB_ACTOR} (GitHub Actions)"
-          git checkout -b release/$RELEASE_TAG && \
+          git checkout -b release/${release_tag} && \
           git add gen/ && \
-          git commit -m "Release $RELEASE_TAG: Include generated client libraries" && \
-          git tag -a $RELEASE_TAG -m "Release $RELEASE_TAG" && \
+          git commit -m "Release ${release_tag}: Include generated client libraries" && \
+          git tag -a ${release_tag} -m "Release ${release_tag}" && \
           git checkout $$CURRENT_BRANCH && \
-          git branch -D release/$RELEASE_TAG && \
-          	if ! git push origin $RELEASE_TAG; then \
-          		echo "Error: Failed to push tag $RELEASE_TAG to remote repository."; \
+          git branch -D release/${release_tag} && \
+          	if ! git push origin ${release_tag}; then \
+          		echo "Error: Failed to push tag ${release_tag} to remote repository."; \
           		echo "Cleaning up local tag..."; \
-          		git tag -d $RELEASE_TAG; \
+          		git tag -d ${release_tag}; \
           		exit 1; \
           	fi
-          	echo "Release $RELEASE_TAG created and pushed successfully!"
+          	echo "Release ${release_tag} created and pushed successfully!"
