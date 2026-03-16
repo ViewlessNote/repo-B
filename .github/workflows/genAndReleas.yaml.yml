@@ -74,6 +74,7 @@ jobs:
           echo "| Year      | ${previous_year} | $(date +'%Y') |" >> $GITHUB_STEP_SUMMARY
           echo "| Month     | ${previous_month} | $(date +'%-m') |" >> $GITHUB_STEP_SUMMARY
           echo "| Day       | ${previous_day} | $(date +'%-d') |" >> $GITHUB_STEP_SUMMARY
+          echo ""${previous_date}" == "${today}"" >> $GITHUB_STEP_SUMMARY
 
           if [[ "${previous_date}" == "${today}" ]]; then
               next_patch="$((previous_patch + 1))"
