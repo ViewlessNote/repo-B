@@ -32,11 +32,114 @@ jobs:
         run: |
           buf generate
 
-      - name: Include generated client libraries
+      - name: Get Previous Tag
+        id: get-previous-tag
+        shell: bash
+        env:
+          GH_TOKEN: "${{ inputs.github-token }}"
         run: |
-          git add gen/
+          previous_tag="$(gh release list --limit 1 | awk '{ print $1 }')"
+          if [ -z "$previous_tag" ]; then
+            echo "ℹ️ **No previous releases found.** This will be the first release." >> $GITHUB_STEP_SUMMARY
+            previous_tag="0.0.0"
+          else
+            echo "🏷️ **Previous release tag:** \`${previous_tag}\`" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "previous_tag=$previous_tag" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Calculate New Version
+        id: calculate-version
+        shell: bash
+        run: |
+          # Get previous tag value from previous step
+          previous_tag="${{ steps.get-previous-tag.outputs.previous_tag }}"
+
+          # Get current YYYY.MM
+          next_year_month="$(date +'%Y').$(date +'%-m')"
+
+          # Extract year, month and patch from previous tag
+          previous_year="${previous_tag%%\.*}"
+          previous_month="${previous_tag#*.}"
+          previous_month="${previous_month%.*}"
+          previous_patch="${previous_tag##*.}"
+
+          echo "### Version Components" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Previous Value | New Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|----------------|-----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Year      | ${previous_year} | $(date +'%Y') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Month     | ${previous_month} | $(date +'%-m') |" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${previous_year}.${previous_month}" == "${next_year_month}" ]]; then
+              next_patch="$((previous_patch + 1))"
+              echo "| Patch     | ${previous_patch} | ${next_patch} ⬆️ |" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "ℹ️ Month release already exists for this year → **incrementing patch number by 1**" >> $GITHUB_STEP_SUMMARY
+          else
+              next_patch="0"
+              echo "| Patch     | ${previous_patch} | ${next_patch} 🔄 |" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "ℹ️ First release for this month → **resetting patch number to 0**" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          release_tag="${next_year_month}.${next_patch}"
+          echo "release_tag=$release_tag" >> $GITHUB_OUTPUT
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🚀 **New release tag:** \`${release_tag}\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Include generated client libraries
+        env:
+          RELEASE_TAG: "${{ steps.calculate-version.outputs.release_tag }}"
+        run: |
+          git checkout -b release/$RELEASE_TAG && \
+          git add gen/ && \
+          git commit -m "Release $RELEASE_TAG: Include generated client libraries" && \
+          git tag -a $RELEASE_TAG -m "Release $RELEASE_TAG" && \
+          git checkout $RELEASE_TAG &&
 
       - name: Create Release
-        uses: mirceanton/action-calver-release@2025.4.1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+        id: create-release
+        shell: bash
+        env:
+          GH_TOKEN: "${{ inputs.github-token }}"
+          DRY_RUN: "${{ inputs.dry-run }}"
+          RELEASE_TAG: "${{ steps.calculate-version.outputs.release_tag }}"
+        run: |
+          echo "## 🔄 Release Process" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          release_cmd="gh release create \"$RELEASE_TAG\" --repo=\"${GITHUB_REPOSITORY}\" --title=\"$RELEASE_TAG\" --generate-notes"
+
+          if [[ "${DRY_RUN}" == "true" ]]; then
+              echo "⚠️ **Running in dry-run mode!** This will **not** actually create a new release!" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "The command that *would have* run is: " >> $GITHUB_STEP_SUMMARY
+              echo "```bash" >> $GITHUB_STEP_SUMMARY
+              echo "$release_cmd" >> $GITHUB_STEP_SUMMARY
+              echo "```" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "✅ **Dry run completed successfully**" >> $GITHUB_STEP_SUMMARY
+
+              echo "release_url=''" >> $GITHUB_OUTPUT
+          else
+              echo "⏳ Creating release..." >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+
+              if release_output=$(eval "$release_cmd" 2>&1); then
+                release_url="https://github.com/$GITHUB_REPOSITORY/releases/tag/$RELEASE_TAG"
+                echo "✅ **Release created successfully!**" >> $GITHUB_STEP_SUMMARY
+                echo "" >> $GITHUB_STEP_SUMMARY
+                echo "📎 **Release URL:** [${release_url}](${release_url})" >> $GITHUB_STEP_SUMMARY
+
+                echo "release_url=$release_url" >> $GITHUB_OUTPUT
+              else
+                echo "❌ **Release creation failed with error:**" >> $GITHUB_STEP_SUMMARY
+                echo "" >> $GITHUB_STEP_SUMMARY
+                echo "```" >> $GITHUB_STEP_SUMMARY
+                echo "$release_output" >> $GITHUB_STEP_SUMMARY
+                echo "```" >> $GITHUB_STEP_SUMMARY
+                exit 1
+              fi
+          fi
