@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package greeter.v1;
+
+option go_package = "github.com/ViewlessNote/actions-test/gen/go/greeter/v1;greeterv1";
+
+// GreetRequest holds the name of the person to greet.
+message GreetRequest {
+  string VorName = 1;
+  string Nachname = 4;
+  string message2 = 2;
+  string message3 = 3;
+  string message4 = 5;
+  string message6 = 6;
+  string message7 = 7;
+}
+
+// GreetResponse holds the greeting message.
+message GreetResponse {
+  string message = 1;
+  string message2 = 2;
+}
+
+// GreeterService provides a simple greeting RPC.
+service GreeterService {
+  rpc Greet(GreetRequest) returns (GreetResponse);
+}
