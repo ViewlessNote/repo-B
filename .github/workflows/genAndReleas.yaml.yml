@@ -100,7 +100,7 @@ jobs:
           git commit -m "Release $RELEASE_TAG: Include generated client libraries" && \
           git tag -a $RELEASE_TAG -m "Release $RELEASE_TAG" && \
           git checkout $$CURRENT_BRANCH && \
-          	git branch -D release/$RELEASE_TAG && \
+          git branch -D release/$RELEASE_TAG && \
           	if ! git push origin $RELEASE_TAG; then \
           		echo "Error: Failed to push tag $RELEASE_TAG to remote repository."; \
           		echo "Cleaning up local tag..."; \
