@@ -52,7 +52,7 @@ jobs:
           previous_tag="${{ steps.get-previous-tag.outputs.previous_tag }}"
 
           # Get current YYYY.MM.DD
-          today="$(date +'%Y').$(date +'%-M').$(date +'%-D')"
+          today="$(date +'%Y').$(date +'%-m').$(date +'%-d')"
 
           # Extract year, month and patch from previous tag
           if [[ "$previous_tag" =~ ^([0-9]{4})\.([0-9]{1,2})\.([0-9]{1,2})(?:\.([0-9]+))?$ ]]; then
