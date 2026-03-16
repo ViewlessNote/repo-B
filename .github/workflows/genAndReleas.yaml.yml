@@ -91,7 +91,6 @@ jobs:
 
       - name: Include generated client libraries
         run: |
-          git rm *
           git add gen/
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
