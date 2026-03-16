@@ -100,11 +100,11 @@ jobs:
           git commit -m "Release $RELEASE_TAG: Include generated client libraries" && \
           git tag -a $RELEASE_TAG -m "Release $RELEASE_TAG" && \
           git checkout $$CURRENT_BRANCH && \
-          	git branch -D release/$(VERSION) && \
-          	if ! git push origin $(VERSION); then \
-          		echo "Error: Failed to push tag $(VERSION) to remote repository."; \
+          	git branch -D release/$RELEASE_TAG && \
+          	if ! git push origin $RELEASE_TAG; then \
+          		echo "Error: Failed to push tag $RELEASE_TAG to remote repository."; \
           		echo "Cleaning up local tag..."; \
-          		git tag -d $(VERSION); \
+          		git tag -d $RELEASE_TAG; \
           		exit 1; \
           	fi
-          	echo "Release $(VERSION) created and pushed successfully!"
+          	echo "Release $RELEASE_TAG created and pushed successfully!"
