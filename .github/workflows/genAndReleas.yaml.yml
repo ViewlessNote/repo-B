@@ -114,17 +114,12 @@ jobs:
 
             # create annotated tag
             git tag -a "$RELEASE_TAG" -m "Release $RELEASE_TAG"
-
-            # push tag (explicitly) — remove local tag on failure
-            if ! git push origin "refs/tags/$RELEASE_TAG"; then
-              echo "Error: Failed to push tag $RELEASE_TAG to remote repository."
-              echo "Cleaning up local tag..."
-              git tag -d "$RELEASE_TAG"
-              # return to original branch and delete release branch before failing
-              git checkout "$CURRENT_BRANCH"
-              git branch -D "release/$RELEASE_TAG" || true
-              exit 1
-            fi
+            echo "Error: Failed to push tag $RELEASE_TAG to remote repository."
+            echo "Cleaning up local tag..."
+            git tag -d "$RELEASE_TAG"
+            # return to original branch and delete release branch before failing
+            git checkout "$CURRENT_BRANCH"
+            git branch -D "release/$RELEASE_TAG" || true
 
             echo "Release $RELEASE_TAG created and pushed successfully!"
 
