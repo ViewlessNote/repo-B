@@ -101,19 +101,13 @@ jobs:
       - name: Include generated client libraries
         run: |
           git add gen/
+          
+      - name: Create Release
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "release/${{ steps.calculate-version.outputs.release_tag }}"
           git commit -m "chore: ${{ steps.calculate-version.outputs.release_tag }}"
           git tag -a ${{ steps.calculate-version.outputs.release_tag }} -m "Release ${{ steps.calculate-version.outputs.release_tag }}"
           git push --set-upstream origin release/${{ steps.calculate-version.outputs.release_tag }}
-          
-
-      - name: Create Release
-        uses: aaiezza/create-release@master
-        id: create_release
-        with:
-          release_branch: releases/${{ steps.calculate-version.outputs.release_tag }}
-          tag: ${{ steps.calculate-version.outputs.release_tag }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          git branch -D release/${{ steps.calculate-version.outputs.release_tag }}
