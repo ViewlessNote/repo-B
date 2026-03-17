@@ -99,6 +99,8 @@ jobs:
           buf generate
 
       - name: Create Release Branch, Commit, Tag and Push
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           CURRENT_BRANCH=$(git branch --show-current); 
           git config user.name "github-actions[bot]"
