@@ -101,7 +101,7 @@ jobs:
       - name: Include generated client libraries
         run: |
           git add gen/
-          
+          git status
       - name: Create Release
         run: |
           git config user.name "github-actions[bot]"
