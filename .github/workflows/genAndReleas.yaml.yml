@@ -105,8 +105,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "release/${{ steps.calculate-version.outputs.release_tag }}"
           git add gen/
-          git commit -m "chore: ${{ steps.calculate-version.outputs.release_tag }}"
+          git commit -m "Release ${{ steps.calculate-version.outputs.release_tag }}: Include generated client libraries"
           git tag -a ${{ steps.calculate-version.outputs.release_tag }} -m "Release ${{ steps.calculate-version.outputs.release_tag }}"
           git checkout $CURRENT_BRANCH
           git branch -D release/${{ steps.calculate-version.outputs.release_tag }}
-          git push origin release/${{ steps.calculate-version.outputs.release_tag }}
+          git push origin ${{ steps.calculate-version.outputs.release_tag }}
