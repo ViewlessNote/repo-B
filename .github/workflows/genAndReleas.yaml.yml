@@ -110,4 +110,4 @@ jobs:
           git checkout $CURRENT_BRANCH
           git branch -D release/${{ steps.calculate-version.outputs.release_tag }}
           git push origin ${{ steps.calculate-version.outputs.release_tag }}
-          git push origin :release/${{ steps.calculate-version.outputs.release_tag }}
+          git push origin --delete release/${{ steps.calculate-version.outputs.release_tag }}
