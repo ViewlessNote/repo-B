@@ -100,13 +100,13 @@ jobs:
 
       - name: Create Release Branch, Commit, Tag and Push
         run: |
-          CURRENT_BRANCH=$$(git branch --show-current); 
+          CURRENT_BRANCH=$(git branch --show-current); 
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "release/${{ steps.calculate-version.outputs.release_tag }}"
           git add gen/
           git commit -m "chore: ${{ steps.calculate-version.outputs.release_tag }}"
           git tag -a ${{ steps.calculate-version.outputs.release_tag }} -m "Release ${{ steps.calculate-version.outputs.release_tag }}"
-          git checkout $$CURRENT_BRANCH
+          git checkout $CURRENT_BRANCH
           git push --set-upstream origin release/${{ steps.calculate-version.outputs.release_tag }}
           git branch -D release/${{ steps.calculate-version.outputs.release_tag }}
