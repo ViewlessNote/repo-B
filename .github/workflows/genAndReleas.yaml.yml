@@ -108,5 +108,5 @@ jobs:
           git commit -m "chore: ${{ steps.calculate-version.outputs.release_tag }}"
           git tag -a ${{ steps.calculate-version.outputs.release_tag }} -m "Release ${{ steps.calculate-version.outputs.release_tag }}"
           git checkout $CURRENT_BRANCH
-          git push --set-upstream origin release/${{ steps.calculate-version.outputs.release_tag }}
           git branch -D release/${{ steps.calculate-version.outputs.release_tag }}
+          git push origin release/${{ steps.calculate-version.outputs.release_tag }}
