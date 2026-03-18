@@ -14,6 +14,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Detect SDK changes
+        id: detect
+        run: |
+          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- ${{ env.SDK_DIR }} || true)
+          echo "changed_files<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGED" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Exit if no SDK changes
+        if: steps.detect.outputs.changed_files == ''
+        run: echo "No sdk/ changes — nothing to release."
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
