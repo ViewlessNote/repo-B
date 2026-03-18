@@ -17,7 +17,7 @@ jobs:
       - name: Detect SDK changes
         id: detect
         run: |
-          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- ${{ env.SDK_DIR }} || true)
+          CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} -- "proto" || true)
           echo "changed_files<<EOF" >> $GITHUB_OUTPUT
           echo "$CHANGED" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
