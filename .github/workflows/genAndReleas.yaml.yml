@@ -1,4 +1,4 @@
-name: genAndReleas.yaml
+name: release-workflow.yaml
 
 on:
   push:
@@ -15,11 +15,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Exit if no SDK changes
-        run: echo "No sdk/ changes — nothing to release."
 
       - name: Set up Go
         uses: actions/setup-go@v5
@@ -40,7 +35,7 @@ jobs:
         env:
           GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
         run: |
-          previous_tag="$(gh release list --limit 1 | awk '{ print $1 }')"
+          previous_tag="$(gh release list --limit 1 --json tagName -q '.[0].tagName')"
           if [ -z "$previous_tag" ]; then
             echo "ℹ️ **No previous releases found.**" >> $GITHUB_STEP_SUMMARY
             previous_tag="0.0.0.0"
@@ -108,15 +103,15 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          CURRENT_BRANCH=$(git branch --show-current); 
+          CURRENT_BRANCH=$(git branch --show-current)
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "release/${{ steps.calculate-version.outputs.release_tag }}"
           git add gen/
           git commit -m "Release ${{ steps.calculate-version.outputs.release_tag }}: Include generated client libraries"
           git tag -a ${{ steps.calculate-version.outputs.release_tag }} -m "Release ${{ steps.calculate-version.outputs.release_tag }}"
-          git checkout $CURRENT_BRANCH
-          git branch -D release/${{ steps.calculate-version.outputs.release_tag }}
+          git checkout "$CURRENT_BRANCH"
+          git branch -D "release/${{ steps.calculate-version.outputs.release_tag }}"
           git push origin ${{ steps.calculate-version.outputs.release_tag }}
           gh release create ${{ steps.calculate-version.outputs.release_tag }} \
               --repo ${{github.repository}} \
