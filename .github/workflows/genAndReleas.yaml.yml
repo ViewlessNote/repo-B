@@ -58,14 +58,18 @@ jobs:
               echo "$commit_messages"
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
+            IFS='.' read -r major minor patch <<< "$previous_tag"
+            major=${major:-0}
+            minor=${minor:-0}
+            patch=${patch:-0}
             if echo "$commit_messages" | grep -qE '^[a-z]+(\([^)]+\))?!:'; then
-              new_version=$(semver bump major "$previous_tag")
+              new_version="$((major + 1)).0.0"
               release_type="major"
             elif echo "$commit_messages" | grep -qE '^feat(\([^)]+\))?:'; then
-              new_version=$(semver bump minor "$previous_tag")
+              new_version="${major}.$((minor + 1)).0"
               release_type="minor"
             elif echo "$commit_messages" | grep -qE '^fix(\([^)]+\))?:'; then
-              new_version=$(semver bump patch "$previous_tag")
+              new_version="${major}.${minor}.$((patch + 1))"
               release_type="patch"
             else
               echo "⚠️ **No relevant commit messages found. No new release will be created.**" >> $GITHUB_STEP_SUMMARY
