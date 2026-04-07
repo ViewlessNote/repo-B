@@ -3,15 +3,13 @@ name: release-workflow.yaml
 on:
   push:
     branches: [ "main" ]
-    paths:
-      - "proto/**"
 
 permissions:
   contents: write
 
 jobs:
   build-and-sync:
-    runs-on:  runs-on=${{ github.run_id }}/runner=sw-amd64/cpu=1
+    runs-on: runs-on=${{ github.run_id }}/runner=sw-amd64/cpu=1
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -33,7 +31,7 @@ jobs:
           previous_tag="$(gh release list --limit 1 --json tagName -q '.[0].tagName')"
           if [ -z "$previous_tag" ]; then
             echo "ℹ️ **No previous releases found.**" >> $GITHUB_STEP_SUMMARY
-            previous_tag="0.0.0.0"
+            previous_tag="0.0.0"
           else
             echo "🏷️ **Previous release tag:** \`${previous_tag}\`" >> $GITHUB_STEP_SUMMARY
           fi
@@ -47,48 +45,29 @@ jobs:
           # Get previous tag value from previous step
           previous_tag="${{ steps.get-previous-tag.outputs.previous_tag }}"
 
-          # Get current YYYY.MM.DD
-          today="$(date +'%Y').$(date +'%m').$(date +'%d')"
-
-          # Extract year, month, day and patch from previous tag
-          if [[ "$previous_tag" =~ ^([0-9]{4})\.([0-9]{2})\.([0-9]{2})\.([0-9]{1,2}) ]]; then
-            py="${BASH_REMATCH[1]}"
-            pm="${BASH_REMATCH[2]}"
-            pd="${BASH_REMATCH[3]}"
-            pp="${BASH_REMATCH[4]:-0}"
-            # normalize Day and Month to two digits for consistent comparison
-            pm=$(printf "%02d" "$pm")
-            pd=$(printf "%02d" "$pd")
-            previous_date="${py}.${pm}.${pd}"
-            previous_patch="$pp"
-          fi
-
-          echo "### Version Components" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Component | Previous Value | New Value |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|----------------|-----------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Year      | ${previous_year} | $(date +'%Y') |" >> $GITHUB_STEP_SUMMARY
-          echo "| Month     | ${previous_month} | $(date +'%-m') |" >> $GITHUB_STEP_SUMMARY
-          echo "| Day       | ${previous_day} | $(date +'%-d') |" >> $GITHUB_STEP_SUMMARY
-          echo ""${previous_date}" == "${today}"" >> $GITHUB_STEP_SUMMARY
-
-          if [[ "${previous_date}" == "${today}" ]]; then
-              next_patch="$((previous_patch + 1))"
-              echo "| Patch     | ${previous_patch} | ${next_patch} ⬆️ |" >> $GITHUB_STEP_SUMMARY
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "ℹ️ Month release already exists for this year → **incrementing patch number by 1**" >> $GITHUB_STEP_SUMMARY
-          else
-              next_patch="0"
-              echo "| Patch     | ${previous_patch} | ${next_patch} 🔄 |" >> $GITHUB_STEP_SUMMARY
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "ℹ️ First release for this day → **resetting patch number to 0**" >> $GITHUB_STEP_SUMMARY
-          fi
-
-          release_tag="${today}.${next_patch}"
-          echo "release_tag=$release_tag" >> $GITHUB_OUTPUT
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🚀 **New release tag:** \`${release_tag}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          # Use semver to calculate the next version
+          # Use the git Commit message feat! feat, and fix to determine the type of release
+          # If the commit message contains "feat!" or "fix!", it indicates a breaking change, and we should increment the major version.
+          # If the commit message contains "feat", it indicates a new feature, and we should increment the minor version.
+          # If the commit message contains "fix", it indicates a bug fix, and we should increment the patch version.
+          
+            # Get the commit messages since the last tag
+            commit_messages=$(git log "$previous_tag"..HEAD --pretty=format:%s)
+            echo "📋 **Commit messages since last release:**" >> $GITHUB_STEP_SUMMARY
+            echo "```\n$commit_messages\n```" >> $GITHUB_STEP_SUMMARY
+            if echo "$commit_messages" | grep -qE "feat!|fix!"; then
+              new_version=$(semver bump major "$previous_tag")
+              release_type="major"
+            elif echo "$commit_messages" | grep -q "feat"; then
+              new_version=$(semver bump minor "$previous_tag")
+              release_type="minor"
+            elif echo "$commit_messages" | grep -q "fix"; then
+              new_version=$(semver bump patch "$previous_tag")
+              release_type="patch"
+            else
+              echo "⚠️ **No relevant commit messages found. No new release will be created.**" >> $GITHUB_STEP_SUMMARY
+              exit 0
+            fi
 
       - name: Buf Generate
         run: |
