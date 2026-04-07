@@ -22,22 +22,6 @@ jobs:
       - name: Install buf
         uses: bufbuild/buf-setup-action@v1.50.0
 
-      - name: Get Previous Tag
-        id: get-previous-tag
-        shell: bash
-        env:
-          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-        run: |
-          previous_tag="$(gh release list --limit 1 --json tagName -q '.[0].tagName')"
-          if [ -z "$previous_tag" ]; then
-            echo "ℹ️ **No previous releases found.**" >> $GITHUB_STEP_SUMMARY
-            previous_tag="0.0.0"
-          else
-            echo "🏷️ **Previous release tag:** \`${previous_tag}\`" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "previous_tag=$previous_tag" >> $GITHUB_OUTPUT
-          echo "" >> $GITHUB_STEP_SUMMARY
-
       - name: Calculate New Version
         id: calculate-version
         uses: ietf-tools/semver-action@v1
