@@ -57,10 +57,10 @@ jobs:
             if echo "$commit_messages" | grep -qE "feat!|fix!"; then
               new_version=$(semver bump major "$previous_tag")
               release_type="major"
-            elif echo "$commit_messages" | grep -q "feat"; then
+            else if echo "$commit_messages" | grep -q "feat"; then
               new_version=$(semver bump minor "$previous_tag")
               release_type="minor"
-            elif echo "$commit_messages" | grep -q "fix"; then
+            else if echo "$commit_messages" | grep -q "fix"; then
               new_version=$(semver bump patch "$previous_tag")
               release_type="patch"
             else
