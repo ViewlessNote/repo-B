@@ -37,6 +37,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Create a new branch for the release, commit the generated client libraries, tag the release, and push to origin
           CURRENT_BRANCH=$(git branch --show-current)
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
