@@ -51,7 +51,7 @@ jobs:
           # If the commit message contains "feat", it indicates a new feature, and we should increment the minor version.
           # If the commit message contains "fix", it indicates a bug fix, and we should increment the patch version.
             # Get the commit messages since the last tag
-            commit_messages=$(git log --pretty=format:"%s" "${previous_tag}"..HEAD)
+            commit_messages=$(git log --pretty=format:"%s")
             echo "📋 **Commit messages since last release:**" >> $GITHUB_STEP_SUMMARY
             echo "```\n$commit_messages\n```" >> $GITHUB_STEP_SUMMARY
             if echo "$commit_messages" | grep -qE "feat!|fix!"; then
