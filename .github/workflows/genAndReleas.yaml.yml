@@ -40,43 +40,10 @@ jobs:
 
       - name: Calculate New Version
         id: calculate-version
-        shell: bash
-        run: |
-          # Get previous tag value from previous step
-          previous_tag="${{ steps.get-previous-tag.outputs.previous_tag }}"
-
-          # Use semver to calculate the next version
-          # Use the git Commit message feat! feat, and fix to determine the type of release
-          # If the commit message contains "feat!" or "fix!", it indicates a breaking change, and we should increment the major version.
-          # If the commit message contains "feat", it indicates a new feature, and we should increment the minor version.
-          # If the commit message contains "fix", it indicates a bug fix, and we should increment the patch version.
-            # Get the commit messages since the last tag
-            commit_messages=$(git log --pretty=format:"%s")
-            echo "📋 **Commit messages since last release:**" >> $GITHUB_STEP_SUMMARY
-            {
-              echo '```'
-              echo "$commit_messages"
-              echo '```'
-            } >> "$GITHUB_STEP_SUMMARY"
-            IFS='.' read -r major minor patch <<< "$previous_tag"
-            major=${major:-0}
-            minor=${minor:-0}
-            patch=${patch:-0}
-            if echo "$commit_messages" | grep -qE '^[a-z]+(\([^)]+\))?!:'; then
-              new_version="$((major + 1)).0.0"
-              release_type="major"
-            elif echo "$commit_messages" | grep -qE '^feat(\([^)]+\))?:'; then
-              new_version="${major}.$((minor + 1)).0"
-              release_type="minor"
-            elif echo "$commit_messages" | grep -qE '^fix(\([^)]+\))?:'; then
-              new_version="${major}.${minor}.$((patch + 1))"
-              release_type="patch"
-            else
-              echo "⚠️ **No relevant commit messages found. No new release will be created.**" >> $GITHUB_STEP_SUMMARY
-              exit 0
-            fi
-            echo "release_tag=$new_version" >> "$GITHUB_OUTPUT"
-            echo "release_type=$release_type" >> "$GITHUB_OUTPUT"
+        uses: ietf-tools/semver-action@v1
+        with:
+          token: ${{ github.token }}
+          branch: main
 
       - name: Buf Generate
         run: |
