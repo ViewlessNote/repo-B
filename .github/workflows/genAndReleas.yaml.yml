@@ -9,7 +9,7 @@ permissions:
 
 jobs:
   build-and-sync:
-    runs-on: ubuntu-22.04
+    runs-on: u
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -52,7 +52,7 @@ jobs:
           # If the commit message contains "fix", it indicates a bug fix, and we should increment the patch version.
           
             # Get the commit messages since the last tag
-            commit_messages=$(git log "$previous_tag"..HEAD --pretty=format:%s)
+            commit_messages=$(git log --pretty=format:"%s" "${previous_tag}"..HEAD)
             echo "📋 **Commit messages since last release:**" >> $GITHUB_STEP_SUMMARY
             echo "```\n$commit_messages\n```" >> $GITHUB_STEP_SUMMARY
             if echo "$commit_messages" | grep -qE "feat!|fix!"; then
