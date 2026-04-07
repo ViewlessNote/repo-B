@@ -53,20 +53,26 @@ jobs:
             # Get the commit messages since the last tag
             commit_messages=$(git log --pretty=format:"%s")
             echo "📋 **Commit messages since last release:**" >> $GITHUB_STEP_SUMMARY
-            echo "```\n$commit_messages\n```" >> $GITHUB_STEP_SUMMARY
-            if echo "$commit_messages" | grep -qE "feat!|fix!"; then
+            {
+              echo '```'
+              echo "$commit_messages"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
+            if echo "$commit_messages" | grep -qE '^[a-z]+(\([^)]+\))?!:'; then
               new_version=$(semver bump major "$previous_tag")
               release_type="major"
-            else if echo "$commit_messages" | grep -q "feat"; then
+            elif echo "$commit_messages" | grep -qE '^feat(\([^)]+\))?:'; then
               new_version=$(semver bump minor "$previous_tag")
               release_type="minor"
-            else if echo "$commit_messages" | grep -q "fix"; then
+            elif echo "$commit_messages" | grep -qE '^fix(\([^)]+\))?:'; then
               new_version=$(semver bump patch "$previous_tag")
               release_type="patch"
             else
               echo "⚠️ **No relevant commit messages found. No new release will be created.**" >> $GITHUB_STEP_SUMMARY
               exit 0
             fi
+            echo "release_tag=$new_version" >> "$GITHUB_OUTPUT"
+            echo "release_type=$release_type" >> "$GITHUB_OUTPUT"
 
       - name: Buf Generate
         run: |
