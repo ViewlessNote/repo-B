@@ -22,6 +22,11 @@ jobs:
       - name: Install buf
         uses: bufbuild/buf-setup-action@v1.50.0
 
+      - name: Install protoc-gen-go
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
       - name: Calculate New Version
         id: calculate-version
         uses: ietf-tools/semver-action@v1
