@@ -1,16 +1,30 @@
 name: release-workflow.yaml
 
 on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version to release (optional, will be auto-calculated if not provided)'
+        required: true
+        default: ''
   push:
-    branches: [ "main" ]
+    branches: ["release"]
+    paths:
+      - "proto/**"
+      - "buf.gen.yaml"
+      - "buf.lock"
+      - "buf.yaml"
+      - "composer.json"
+      - "go.mod"
 
 permissions:
   contents: write
 
 jobs:
   build-and-sync:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -24,15 +38,13 @@ jobs:
 
       - name: Install protoc-gen-go
         run: |
-          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+            go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
+            echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
-      - name: Calculate New Version
-        id: calculate-version
-        uses: ietf-tools/semver-action@v1
-        with:
-          token: ${{ github.token }}
-          branch: main
+
+      - name: Buf lint
+        run: |
+          buf lint
 
       - name: Buf Generate
         run: |
@@ -46,14 +58,15 @@ jobs:
           CURRENT_BRANCH=$(git branch --show-current)
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b "release/${{ steps.calculate-version.outputs.next }}"
+          git checkout -b "release/${{ inputs.tag }}"
           git add gen/
-          git commit -m "Release ${{ steps.calculate-version.outputs.next }}: Include generated client libraries"
-          git tag -a ${{ steps.calculate-version.outputs.next }} -m "Release ${{ steps.calculate-version.outputs.next }}"
+          git commit -m "Release ${{ inputs.tag }}: Include generated client libraries"
+          git tag -a ${{ inputs.tag}} -m "Release ${{ inputs.tag }}"
           git checkout "$CURRENT_BRANCH"
-          git branch -D "release/${{ steps.calculate-version.outputs.next }}"
-          git push origin ${{ steps.calculate-version.outputs.next }}
-          gh release create ${{ steps.calculate-version.outputs.next }} \
+          git branch -D "release/${{ inputs.tag}}"
+          git push origin ${{ inputs.tag }}
+          gh release create ${{ inputs.tag }} \
               --repo ${{github.repository}} \
-              --title "${{ steps.calculate-version.outputs.next }}" \
+              --title "${{ inputs.tag }}" \
               --generate-notes
+
