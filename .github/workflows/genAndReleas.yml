@@ -1,0 +1,63 @@
+name: release-workflow.yaml
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Version to release (optional, will be auto-calculated if not provided)'
+        required: true
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-sync:
+    runs-on: ubuntu-latest
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - name: Install buf
+        uses: bufbuild/buf-setup-action@v1.50.0
+
+      - name: Install protoc-gen-go
+        run: |
+            go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
+            echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+
+      - name: Buf lint
+        run: |
+          buf lint
+
+      - name: Buf Generate
+        run: |
+          buf generate
+
+      - name: Create Release Branch, Commit, Tag, and Push
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Create a new branch for the release, commit the generated client libraries, tag the release, and push to origin
+          CURRENT_BRANCH=$(git branch --show-current)
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git checkout -b "release/${{ inputs.tag }}"
+          git add gen/
+          git commit -m "Release ${{ inputs.tag }}: Include generated client libraries"
+          git tag -a ${{ inputs.tag}} -m "Release ${{ inputs.tag }}"
+          git checkout "$CURRENT_BRANCH"
+          git branch -D "release/${{ inputs.tag}}"
+          git push origin ${{ inputs.tag }}
+          gh release create ${{ inputs.tag }} \
+              --repo ${{github.repository}} \
+              --title "${{ inputs.tag }}" \
+              --generate-notes
+
