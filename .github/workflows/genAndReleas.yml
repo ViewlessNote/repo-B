@@ -7,15 +7,6 @@ on:
         description: 'Version to release (optional, will be auto-calculated if not provided)'
         required: true
         default: ''
-  push:
-    branches: ["release"]
-    paths:
-      - "proto/**"
-      - "buf.gen.yaml"
-      - "buf.lock"
-      - "buf.yaml"
-      - "composer.json"
-      - "go.mod"
 
 permissions:
   contents: write
