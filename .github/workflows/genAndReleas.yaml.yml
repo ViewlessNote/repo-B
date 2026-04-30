@@ -2,15 +2,47 @@ name: release-workflow.yaml
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
+    paths:
+      - "proto/**"
+      - "buf.gen.yaml"
+      - "buf.lock"
+      - "buf.yaml"
+      - "composer.json"
+      - "go.mod"
 
 permissions:
   contents: write
 
 jobs:
   build-and-sync:
-    runs-on: ubuntu-22.04
+    runs-on: runs-on=${{ github.run_id }}/runner=sw-amd64/cpu=1
     steps:
+      - name: Checkout Backend
+        id: get-version
+        uses: actions/checkout@v4
+        with:
+          token: ${{ github.token }}
+          repository: 'shopware/paas-backend'
+
+      - name: Get Backend Tags
+        id: get-version
+        run: |
+          # Get the latest tag from the backend repository and calculate the next version using semver
+          LATEST_TAG=$(git describe --tags --match "v*" --abrev=0 2>/dev/null || echo "v0.0.0")
+          echo "Latest tag: $LATEST_TAG"
+          
+          # Remove the 'v' prefix and split into components
+          VERSION=${LATEST_TAG#v}
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          
+          # Increment the patch version for the next release
+          NEXT_PATCH=$((PATCH + 1))
+          NEXT_VERSION="v${MAJOR}.${MINOR}.${NEXT_PATCH}"
+          
+          echo "Next version: $NEXT_VERSION"
+          echo "next=$NEXT_VERSION" >> $GITHUB_OUTPUT
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -22,17 +54,10 @@ jobs:
       - name: Install buf
         uses: bufbuild/buf-setup-action@v1.50.0
 
-      - name: Install protoc-gen-go
-        run: |
-          go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.11
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
 
-      - name: Calculate New Version
-        id: calculate-version
-        uses: ietf-tools/semver-action@v1
-        with:
-          token: ${{ github.token }}
-          branch: main
+      - name: Buf lint
+        run: |
+          buf lint
 
       - name: Buf Generate
         run: |
@@ -46,14 +71,15 @@ jobs:
           CURRENT_BRANCH=$(git branch --show-current)
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -b "release/${{ steps.calculate-version.outputs.next }}"
+          git checkout -b "release/${{ steps.get-version.outputs.next }}"
           git add gen/
-          git commit -m "Release ${{ steps.calculate-version.outputs.next }}: Include generated client libraries"
-          git tag -a ${{ steps.calculate-version.outputs.next }} -m "Release ${{ steps.calculate-version.outputs.next }}"
+          git commit -m "Release ${{ steps.get-version.outputs.next }}: Include generated client libraries"
+          git tag -a ${{ steps.get-version.outputs.next }} -m "Release ${{ steps.get-version.outputs.next }}"
           git checkout "$CURRENT_BRANCH"
-          git branch -D "release/${{ steps.calculate-version.outputs.next }}"
-          git push origin ${{ steps.calculate-version.outputs.next }}
-          gh release create ${{ steps.calculate-version.outputs.next }} \
+          git branch -D "release/${{ steps.get-version.outputs.next }}"
+          git push origin ${{ steps.get-version.outputs.next }}
+          gh release create ${{ steps.get-version.outputs.next }} \
               --repo ${{github.repository}} \
-              --title "${{ steps.calculate-version.outputs.next }}" \
+              --title "${{ steps.get-version.outputs.next }}" \
               --generate-notes
+
